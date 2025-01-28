@@ -1,4 +1,5 @@
 volumes/
+.cursorrules
 
 # Node.js
 node_modules/
