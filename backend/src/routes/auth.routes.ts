@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { mobileLogin, webLogin, register } from "@/controllers";
+import { login, register } from "@/controllers";
 
 const router = Router();
 
@@ -7,7 +7,6 @@ const router = Router();
 router.post("/register", register);
 
 // Login user
-router.post("/login", webLogin);
-router.post("/mobile-login", mobileLogin);
+router.post("/login", login);
 
 export default router;

@@ -25,16 +25,34 @@ model User {
 }
 
 model Session {
-  id        String   @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String   @db.Uuid
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientIp   String   @default("")
+  clientType String   @default("")
+  userId     String   @db.Uuid
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   refreshToken RefreshToken?
+  userAgent    UserAgent?
 
   @@index([userId])
+}
+
+model UserAgent {
+  id        String   @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId String   @unique @db.Uuid
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userAgent String?
+  browser   String?
+  engine    String?
+  os        String?
+  device    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
 }
 
 model RefreshToken {

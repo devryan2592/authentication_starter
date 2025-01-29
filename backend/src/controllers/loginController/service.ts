@@ -3,7 +3,7 @@ import { prisma } from "@/utils/db";
 import { AppError } from "@/helpers/error";
 import { StatusCodes } from "http-status-codes";
 import { generateTokens } from "@/services/generateTokens";
-import type { User, Session, RefreshToken } from "@prisma/client";
+import { SessionAndTokensResponse } from "./type";
 
 /**
  * Validate user credentials and handle initial login
@@ -38,41 +38,59 @@ export const validateCredentials = async (email: string, password: string) => {
 export const handleLogin = async (
   email: string,
   password: string,
-  existingRefreshToken?: string
+  clientType: string,
+  clientIp: string,
+  userAgent: UAParser.IResult
 ) => {
   const user = await validateCredentials(email, password);
 
-  return await createAndSendTokens(user.id, existingRefreshToken);
+  if (!user) {
+    throw new AppError("Invalid credentials", StatusCodes.UNAUTHORIZED);
+  }
+
+  const { session, accessToken, refreshToken } = await createSessionAndTokens(
+    user.id,
+    clientIp,
+    clientType,
+    userAgent
+  );
+
+  if (!session) {
+    throw new AppError(
+      "Failed to create session",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+
+  if (!accessToken || !refreshToken) {
+    throw new AppError(
+      "Failed to generate tokens",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+
+  return { user, session, accessToken, refreshToken };
 };
 
 // Create and send tokens with session
-export const createAndSendTokens = async (
+export const createSessionAndTokens = async (
   userId: string,
-  existingRefreshToken?: string
-): Promise<{
-  session: Session & {
-    refreshToken: RefreshToken | null;
-    user: Omit<User, "password">;
-  };
-  accessToken: string;
-}> => {
-  console.log("existingRefreshToken", existingRefreshToken);
+  clientIp: string,
+  clientType: string,
+  userAgent: UAParser.IResult
+): Promise<SessionAndTokensResponse> => {
   // First we generate tokens
   const { accessToken, refreshToken } = await generateTokens(userId);
 
-  let session:
-    | (Session & {
-        refreshToken: RefreshToken | null;
-        user: Omit<User, "password">;
-      })
-    | null = null;
+  let session;
 
-  if (existingRefreshToken) {
-    // We find and update the session with the new refresh token
+  if (clientIp && clientIp !== "" && clientType && clientType !== "") {
+    // We find and update the session with the ip address and client type
     const existingSession = await prisma.session.findFirst({
       where: {
         userId,
-        refreshToken: { token: existingRefreshToken },
+        clientIp,
+        clientType,
       },
     });
 
@@ -87,14 +105,8 @@ export const createAndSendTokens = async (
             },
           },
         },
-        include: {
-          refreshToken: true,
-          user: true,
-        },
       });
     }
-  } else {
-    // IF no existing refresh token, we find session by user Ip and device
   }
 
   // If no session, we create a new one
@@ -102,6 +114,8 @@ export const createAndSendTokens = async (
     session = await prisma.session.create({
       data: {
         userId,
+        clientIp,
+        clientType,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         refreshToken: {
           create: {
@@ -109,13 +123,18 @@ export const createAndSendTokens = async (
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           },
         },
-      },
-      include: {
-        refreshToken: true,
-        user: true,
+        userAgent: {
+          create: {
+            userAgent: userAgent.ua,
+            browser: userAgent.browser.name,
+            os: userAgent.os.name,
+            device: userAgent.device.type,
+            engine: userAgent.engine.name,
+          },
+        },
       },
     });
   }
 
-  return { session, accessToken };
+  return { session, accessToken, refreshToken };
 };

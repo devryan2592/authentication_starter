@@ -10,6 +10,7 @@ import { errorHandler } from "@/middlewares/errorHandler";
 // import { rateLimiter } from '@/middlewares/ratelimiter';
 // import corsOptions from '@/config/cors/corsOptions';
 import router from "@/routes";
+import clientTypeMiddleware from "./middlewares/clientType";
 
 const app: Express = express();
 
@@ -38,9 +39,6 @@ app.use(morgan("dev"));
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// API routes
-app.use("/api/v1", router);
-
 // Main page route
 app.get("/", (_req, res) => {
   res.render("landing", {
@@ -48,6 +46,11 @@ app.get("/", (_req, res) => {
     description: "Modern Authentication System API",
   });
 });
+
+app.use(clientTypeMiddleware);
+
+// API routes
+app.use("/api/v1", router);
 
 // Error handler
 app.use(errorHandler);

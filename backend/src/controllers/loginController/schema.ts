@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Base login schema
-export const baseLoginSchema = z.object({
+export const loginSchema = z.object({
   email: z
     .string({ required_error: "Email is required" })
     .email("Please enter a valid email address")
@@ -10,9 +10,4 @@ export const baseLoginSchema = z.object({
   password: z.string({ required_error: "Password is required" }),
 });
 
-export const MobileLoginSchema = baseLoginSchema.extend({
-  refreshToken: z.string().optional(),
-});
-
-export type BaseLoginInput = z.infer<typeof baseLoginSchema>;
-export type MobileLoginInput = z.infer<typeof MobileLoginSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
