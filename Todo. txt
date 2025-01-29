@@ -1,0 +1,5 @@
+1. Create the refresh token endpoint. Also create the function to detect refresh token reuse.
+2. Create the logout endpoint.
+
+
+Add last login field to session. Send complete session object to client. will be used to check if the user has logged in from another device.

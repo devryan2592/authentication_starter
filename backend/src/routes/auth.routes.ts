@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register } from "@/controllers";
+import { login, refreshToken, register } from "@/controllers";
 
 const router = Router();
 
@@ -8,5 +8,8 @@ router.post("/register", register);
 
 // Login user
 router.post("/login", login);
+
+// Refresh token
+router.post("/refresh-token", refreshToken);
 
 export default router;

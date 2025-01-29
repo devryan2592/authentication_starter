@@ -2,8 +2,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/utils/db";
 import { AppError } from "@/helpers/error";
 import { StatusCodes } from "http-status-codes";
-import { generateTokens } from "@/services/generateTokens";
 import { SessionAndTokensResponse } from "./type";
+import { generateTokens } from "@/services/tokenService";
 
 /**
  * Validate user credentials and handle initial login
